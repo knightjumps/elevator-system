@@ -12,9 +12,12 @@ public class Main {
         controller.requestElevator(3, Direction.UP);
         controller.requestElevator(8, Direction.DOWN);
         controller.selectDestination(1, 10);
-        for (int round = 0; round < 5; round++) for (ElevatorCar car : building.elevators()) car.processNextStop();
+        for (int round = 0; round < 5; round++)
+            for (ElevatorCar car : building.elevators())
+                car.processNextStop();
         controller.setMaintenanceMode(3, true);
         controller.requestElevator(6, Direction.UP);
-        for (ElevatorCar car : building.elevators()) System.out.println(car.status());
+        for (ElevatorCar car : building.elevators())
+            System.out.println(car.status());
     }
 }

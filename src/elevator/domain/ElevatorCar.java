@@ -37,28 +37,49 @@ public final class ElevatorCar {
         return state != ElevatorState.MAINTENANCE && state != ElevatorState.EMERGENCY_STOP && currentLoadKg < maxLoadKg;
     }
 
-    public synchronized void addPickupStop(int floor) { addStop(floor); }
-    public synchronized void addDestinationStop(int floor) { addStop(floor); }
+    public synchronized void addPickupStop(int floor) {
+        addStop(floor);
+    }
+    public synchronized void addDestinationStop(int floor) {
+        addStop(floor);
+    }
 
     private void addStop(int floor) {
         validateFloor(floor);
-        if (state == ElevatorState.MAINTENANCE || state == ElevatorState.EMERGENCY_STOP) throw new IllegalStateException("Elevator " + id + " is unavailable");
-        if (floor > currentFloor) upStops.add(floor);
-        else if (floor < currentFloor) downStops.add(floor);
+        if (state == ElevatorState.MAINTENANCE || state == ElevatorState.EMERGENCY_STOP)
+            throw new IllegalStateException("Elevator " + id + " is unavailable");
+        if (floor > currentFloor)
+            upStops.add(floor);
+        else if (floor < currentFloor)
+            downStops.add(floor);
         else serviceCurrentFloor();
     }
 
-    /** Executes one planned stop; a real system invokes this from the car's command/event loop. */
+    /**
+     * Executes one simulation tick. A tick moves the car by one physical floor; arriving
+     * at a queued stop is a separate event that opens the door and clears that stop.
+     */
     public synchronized void processNextStop() {
         if (state == ElevatorState.MAINTENANCE || state == ElevatorState.EMERGENCY_STOP || isOverloaded()) return;
         Integer next = nextStop();
-        if (next == null) { becomeIdle(); return; }
-        if (door.isOpen()) door.close();
+        if (next == null) {
+            becomeIdle();
+            return;
+        }
+        if (door.isOpen())
+            door.close();
+        if (next == currentFloor) {
+            serviceCurrentFloor();
+            return;
+        }
         direction = next > currentFloor ? Direction.UP : Direction.DOWN;
         state = direction == Direction.UP ? ElevatorState.MOVING_UP : ElevatorState.MOVING_DOWN;
-        currentFloor = next; // Motor and position sensors perform this in production.
-        removeStop(next);
-        serviceCurrentFloor();
+        currentFloor += direction == Direction.UP ? 1 : -1;
+        updateDisplay();
+
+        if (currentFloor == next) {
+            serviceCurrentFloor();
+        }
     }
 
     private Integer nextStop() {
@@ -68,35 +89,61 @@ public final class ElevatorCar {
         return downStops.isEmpty() ? null : downStops.first();
     }
 
-    private void removeStop(int floor) { upStops.remove(floor); downStops.remove(floor); }
-    private void serviceCurrentFloor() { removeStop(currentFloor); becomeIdle(); door.open(); updateDisplay(); }
-    private void becomeIdle() { state = ElevatorState.IDLE; direction = Direction.NONE; updateDisplay(); }
+    private void removeStop(int floor) {
+        upStops.remove(floor);
+        downStops.remove(floor);
+    }
+
+    private void serviceCurrentFloor() {
+        removeStop(currentFloor);
+        becomeIdle();
+        door.open();
+        updateDisplay();
+    }
+    private void becomeIdle() {
+        state = ElevatorState.IDLE;
+        direction = Direction.NONE;
+        updateDisplay();
+    }
     /** The open-door button is accepted only when the car is already stationary. */
     public synchronized void openDoorIfStationary() {
         if (state == ElevatorState.IDLE) door.open();
     }
-    public synchronized void closeDoor() { door.close(); }
+    public synchronized void closeDoor() {
+        door.close();
+    }
 
     public synchronized void setCurrentLoadKg(int loadKg) {
         if (loadKg < 0) throw new IllegalArgumentException("Load cannot be negative");
-        currentLoadKg = loadKg; updateDisplay();
+        currentLoadKg = loadKg;
+        updateDisplay();
     }
     public synchronized boolean isOverloaded() { return currentLoadKg > maxLoadKg; }
 
     public synchronized void setMaintenance(boolean enabled) {
-        if (enabled) { state = ElevatorState.MAINTENANCE; direction = Direction.NONE; door.close(); }
-        else if (state == ElevatorState.MAINTENANCE) becomeIdle();
+        if (enabled) {
+            state = ElevatorState.MAINTENANCE; direction = Direction.NONE; door.close();
+        }
+        else if (state == ElevatorState.MAINTENANCE)
+            becomeIdle();
         updateDisplay();
     }
 
     public synchronized void emergencyStop() {
-        state = ElevatorState.EMERGENCY_STOP; direction = Direction.NONE; door.close(); updateDisplay();
+        state = ElevatorState.EMERGENCY_STOP; direction = Direction.NONE;
+        door.close();
+        updateDisplay();
         securityService.alertEmergency(id, currentFloor);
     }
 
     public synchronized String status() {
         return "ElevatorCar{id=" + id + ", state=" + state + ", " + display.read() + ", door=" + door.state() + ", queuedStops=" + (upStops.size() + downStops.size()) + "}";
     }
-    private void validateFloor(int floor) { if (floor < 0 || floor > maxFloor) throw new IllegalArgumentException("Invalid floor: " + floor); }
-    private void updateDisplay() { display.update(currentFloor, direction, currentLoadKg); }
+    private void validateFloor(int floor) {
+        if (floor < 0 || floor > maxFloor)
+            throw new IllegalArgumentException("Invalid floor: " + floor);
+    }
+    private void updateDisplay() {
+        display.update(currentFloor, direction, currentLoadKg);
+    }
 }
