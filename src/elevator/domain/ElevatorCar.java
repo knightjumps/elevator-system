@@ -11,7 +11,9 @@ import java.util.Comparator;
 import java.util.NavigableSet;
 import java.util.TreeSet;
 
-/** Owns one car's mutable state. Ordered stop sets serve the current direction before reversing. */
+/**
+ * Owns one car's mutable state. Ordered stop sets serve the current direction before reversing.
+ */
 public final class ElevatorCar {
     private final int id, maxFloor, maxLoadKg;
     private final Door door = new Door();
@@ -24,14 +26,28 @@ public final class ElevatorCar {
     private ElevatorState state = ElevatorState.IDLE;
 
     public ElevatorCar(int id, int maxFloor, int maxLoadKg, SecurityService securityService) {
-        this.id = id; this.maxFloor = maxFloor; this.maxLoadKg = maxLoadKg; this.securityService = securityService;
+        this.id = id;
+        this.maxFloor = maxFloor;
+        this.maxLoadKg = maxLoadKg;
+        this.securityService = securityService;
         updateDisplay();
     }
 
-    public synchronized int id() { return id; }
-    public synchronized int currentFloor() { return currentFloor; }
-    public synchronized Direction direction() { return direction; }
-    public synchronized ElevatorState state() { return state; }
+    public synchronized int id() {
+        return id;
+    }
+
+    public synchronized int currentFloor() {
+        return currentFloor;
+    }
+
+    public synchronized Direction direction() {
+        return direction;
+    }
+
+    public synchronized ElevatorState state() {
+        return state;
+    }
 
     public synchronized boolean canAccept(HallRequest request) {
         return state != ElevatorState.MAINTENANCE && state != ElevatorState.EMERGENCY_STOP && currentLoadKg < maxLoadKg;
@@ -40,6 +56,7 @@ public final class ElevatorCar {
     public synchronized void addPickupStop(int floor) {
         addStop(floor);
     }
+
     public synchronized void addDestinationStop(int floor) {
         addStop(floor);
     }
@@ -100,15 +117,20 @@ public final class ElevatorCar {
         door.open();
         updateDisplay();
     }
+
     private void becomeIdle() {
         state = ElevatorState.IDLE;
         direction = Direction.NONE;
         updateDisplay();
     }
-    /** The open-door button is accepted only when the car is already stationary. */
+
+    /**
+     * The open-door button is accepted only when the car is already stationary.
+     */
     public synchronized void openDoorIfStationary() {
         if (state == ElevatorState.IDLE) door.open();
     }
+
     public synchronized void closeDoor() {
         door.close();
     }
@@ -118,19 +140,24 @@ public final class ElevatorCar {
         currentLoadKg = loadKg;
         updateDisplay();
     }
-    public synchronized boolean isOverloaded() { return currentLoadKg > maxLoadKg; }
+
+    public synchronized boolean isOverloaded() {
+        return currentLoadKg > maxLoadKg;
+    }
 
     public synchronized void setMaintenance(boolean enabled) {
         if (enabled) {
-            state = ElevatorState.MAINTENANCE; direction = Direction.NONE; door.close();
-        }
-        else if (state == ElevatorState.MAINTENANCE)
+            state = ElevatorState.MAINTENANCE;
+            direction = Direction.NONE;
+            door.close();
+        } else if (state == ElevatorState.MAINTENANCE)
             becomeIdle();
         updateDisplay();
     }
 
     public synchronized void emergencyStop() {
-        state = ElevatorState.EMERGENCY_STOP; direction = Direction.NONE;
+        state = ElevatorState.EMERGENCY_STOP;
+        direction = Direction.NONE;
         door.close();
         updateDisplay();
         securityService.alertEmergency(id, currentFloor);
@@ -139,10 +166,12 @@ public final class ElevatorCar {
     public synchronized String status() {
         return "ElevatorCar{id=" + id + ", state=" + state + ", " + display.read() + ", door=" + door.state() + ", queuedStops=" + (upStops.size() + downStops.size()) + "}";
     }
+
     private void validateFloor(int floor) {
         if (floor < 0 || floor > maxFloor)
             throw new IllegalArgumentException("Invalid floor: " + floor);
     }
+
     private void updateDisplay() {
         display.update(currentFloor, direction, currentLoadKg);
     }

@@ -4,7 +4,9 @@ import elevator.domain.ElevatorCar;
 import elevator.model.Direction;
 import elevator.system.Building;
 
-/** A small runnable scenario for the elevator-system LLD. */
+/**
+ * A small runnable scenario for the elevator-system LLD.
+ */
 public class Main {
     public static void main(String[] args) {
         Building building = Building.create(12, 3, 1_000, new NearestEligibleCarStrategy());

@@ -1,2 +1,3 @@
 package elevator.model;
-public enum DoorState { OPEN, CLOSED }
+
+public enum DoorState {OPEN, CLOSED}

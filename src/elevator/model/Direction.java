@@ -1,2 +1,3 @@
 package elevator.model;
-public enum Direction { UP, DOWN, NONE }
+
+public enum Direction {UP, DOWN, NONE}
